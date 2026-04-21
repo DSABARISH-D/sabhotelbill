@@ -14,28 +14,6 @@ app.use(express.urlencoded({ extended: true }));
 // Static files for invoices
 app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/menu', require('./routes/menu'));
-app.use('/api/orders', require('./routes/orders'));
-app.use('/api/dashboard', require('./routes/dashboard'));
-app.use('/api/payment', require('./routes/payment'));
-
-// Google Sheets Integration (from Step 5)
-const axios = require('axios');
-app.post('/save-bill', async (req, res) => {
-  if (!process.env.GOOGLE_SHEETS_WEBHOOK || process.env.GOOGLE_SHEETS_WEBHOOK === 'YOUR_GOOGLE_SCRIPT_URL') {
-    return res.status(500).send("Please update GOOGLE_SHEETS_WEBHOOK in .env");
-  }
-  try {
-    await axios.post(process.env.GOOGLE_SHEETS_WEBHOOK, req.body);
-    res.send("Saved to Google Sheets");
-  } catch (err) {
-    console.error("Google Sheets Error:", err.message);
-    res.status(500).send("Error saving to Google Sheets");
-  }
-});
-
 // Connect to MongoDB
 const uri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/hotel_billing';
 
@@ -58,6 +36,30 @@ app.use(async (req, res, next) => {
   await connectDB();
   next();
 });
+
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/menu', require('./routes/menu'));
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/payment', require('./routes/payment'));
+
+// Google Sheets Integration (from Step 5)
+const axios = require('axios');
+app.post('/save-bill', async (req, res) => {
+  if (!process.env.GOOGLE_SHEETS_WEBHOOK || process.env.GOOGLE_SHEETS_WEBHOOK === 'YOUR_GOOGLE_SCRIPT_URL') {
+    return res.status(500).send("Please update GOOGLE_SHEETS_WEBHOOK in .env");
+  }
+  try {
+    await axios.post(process.env.GOOGLE_SHEETS_WEBHOOK, req.body);
+    res.send("Saved to Google Sheets");
+  } catch (err) {
+    console.error("Google Sheets Error:", err.message);
+    res.status(500).send("Error saving to Google Sheets");
+  }
+});
+
+
 
 if (process.env.NODE_ENV !== 'production') {
   connectDB().then(() => {
