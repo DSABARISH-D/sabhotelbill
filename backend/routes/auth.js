@@ -48,9 +48,20 @@ router.post('/login', async (req, res) => {
     }
 
     // Find user by name (case-insensitive)
-    const user = await User.findOne({ name: { $regex: new RegExp('^' + nameInput.trim() + '$', 'i') } });
-    if (!user || !user.isActive) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    let user = await User.findOne({ name: { $regex: new RegExp('^' + nameInput.trim() + '$', 'i') } });
+    
+    // Auto-seed first admin on fresh database
+    if (!user) {
+      const count = await User.countDocuments();
+      if (count === 0 && nameInput.toLowerCase() === 'admin') {
+        user = await User.create({ name: 'admin', email: 'admin@hotel.com', password, role: 'admin' });
+      } else {
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      }
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({ success: false, message: 'Account deactivated' });
     }
 
     const isMatch = await user.comparePassword(password);
