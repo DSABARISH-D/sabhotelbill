@@ -38,17 +38,33 @@ app.post('/save-bill', async (req, res) => {
 
 // Connect to MongoDB
 const uri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/hotel_billing';
-mongoose.connect(uri)
-  .then(() => {
+
+let isConnected = false;
+const connectDB = async () => {
+  if (isConnected) return;
+  try {
+    const db = await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000 // Fail fast if no connection
+    });
+    isConnected = db.connections[0].readyState;
     console.log('✅ MongoDB Connected');
-    if (process.env.NODE_ENV !== 'production') {
-      app.listen(process.env.PORT || 5000, () => {
-        console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
-      });
-    }
-  })
-  .catch(err => {
+  } catch (err) {
     console.error('❌ MongoDB connection failed:', err.message);
+  }
+};
+
+// Vercel Serverless needs middleware to ensure DB is connected for every request
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  connectDB().then(() => {
+    app.listen(process.env.PORT || 5000, () => {
+      console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
+    });
   });
+}
 
 module.exports = app;
