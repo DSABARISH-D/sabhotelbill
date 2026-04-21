@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sabarish Foods – Billing System</title>
+  <meta name="description" content="Advanced hotel billing system with menu management, UPI payments, and real-time analytics." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ======================== LOGIN PAGE ======================== -->
+<div id="loginPage" class="page active">
+  <div class="login-bg">
+    <div class="login-particles" id="particles"></div>
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-logo">
+          <div class="logo-icon"><img src="images/logo.png" alt="Sabarish Foods Logo" class="custom-logo-img" /></div>
+          <h1>Sabarish Foods</h1>
+          <p>Billing &amp; Management System</p>
+        </div>
+        <!-- Login Form -->
+        <form id="loginForm" class="auth-form active" onsubmit="handleLogin(event)" autocomplete="off">
+          <div class="form-group">
+            <label><i class="fas fa-user"></i> Name</label>
+            <input type="text" id="loginEmail" placeholder="Enter your name" required autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-lock"></i> Password</label>
+            <div class="input-with-icon">
+              <input type="password" id="loginPassword" placeholder="••••••••" required />
+              <button type="button" class="eye-btn" onclick="togglePassword('loginPassword')"><i class="fas fa-eye"></i></button>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary full-width" id="loginBtn">
+            <i class="fas fa-sign-in-alt"></i> Sign In
+          </button>
+
+        </form>
+        <div id="authMessage" class="auth-message"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== MAIN APP ======================== -->
+<div id="appWrapper" class="hidden" style="display:none">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <img src="images/logo.png" alt="Logo" class="sidebar-custom-logo" />
+        <div>
+          <span class="hotel-name">Sabarish Foods</span>
+          <span class="hotel-sub">Billing System</span>
+        </div>
+      </div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="javascript:void(0)" class="nav-item admin-only active" onclick="navigateTo('dashboard')" id="nav-dashboard">
+        <i class="fas fa-chart-line"></i><span>Dashboard</span>
+      </a>
+      <a href="javascript:void(0)" class="nav-item" onclick="navigateTo('billing')" id="nav-billing">
+        <i class="fas fa-cash-register"></i><span>New Bill</span>
+        <span class="nav-badge" id="cartBadge" style="display:none">0</span>
+      </a>
+      <a href="javascript:void(0)" class="nav-item" onclick="navigateTo('menu')" id="nav-menu">
+        <i class="fas fa-utensils"></i><span>Menu Items</span>
+      </a>
+      <a href="javascript:void(0)" class="nav-item" onclick="navigateTo('orders')" id="nav-orders">
+        <i class="fas fa-receipt"></i><span>Orders</span>
+        <span class="nav-badge" id="liveOrdersBadge" style="display:none;background:#ef4444">0</span>
+      </a>
+      <a href="javascript:void(0)" class="nav-item admin-only" onclick="navigateTo('users')" id="nav-users">
+        <i class="fas fa-users"></i><span>Staff</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="sidebarAvatar">A</div>
+        <div>
+          <div class="user-name" id="sidebarName">Admin</div>
+          <div class="user-role" id="sidebarRole">Administrator</div>
+        </div>
+      </div>
+      <div style="display:flex; gap: 6px;">
+        <button class="btn-logout admin-only" onclick="resetApp()" title="Reset App"><i class="fas fa-sync-alt"></i></button>
+        <button class="btn-logout" onclick="logout()" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+        <h2 class="page-title" id="pageTitle">Dashboard</h2>
+      </div>
+      <div class="topbar-right">
+        <div id="liveIndicator" class="live-indicator admin-only" style="display:none">
+          <span class="live-dot" id="liveDot"></span>
+          <span>LIVE</span>
+        </div>
+        <div class="topbar-time" id="topbarTime"></div>
+        <button class="topbar-notif"><i class="fas fa-bell"></i></button>
+      </div>
+    </div>
+
+    <!-- Pages -->
+    <!-- DASHBOARD -->
+    <div id="dashboardPage" class="content-page active">
+      <div class="stats-grid">
+        <div class="stat-card primary">
+          <div class="stat-icon"><i class="fas fa-indian-rupee-sign"></i></div>
+          <div class="stat-info">
+            <span class="stat-label">Today's Revenue</span>
+            <span class="stat-value" id="statTodayRevenue">₹0</span>
+          </div>
+          <div class="stat-trend up" id="statTodayTrend"></div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-icon"><i class="fas fa-shopping-bag"></i></div>
+          <div class="stat-info">
+            <span class="stat-label">Today's Orders</span>
+            <span class="stat-value" id="statTodayOrders">0</span>
+          </div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-icon"><i class="fas fa-clock"></i></div>
+          <div class="stat-info">
+            <span class="stat-label">Pending Bills</span>
+            <span class="stat-value" id="statPending">0</span>
+          </div>
+        </div>
+        <div class="stat-card info">
+          <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+          <div class="stat-info">
+            <span class="stat-label">Monthly Revenue</span>
+            <span class="stat-value" id="statMonthRevenue">₹0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="chart-card">
+          <div class="card-header">
+            <h3><i class="fas fa-chart-bar"></i> Revenue – Last 7 Days</h3>
+          </div>
+          <div style="height: 250px; width: 100%;">
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card small">
+          <div class="card-header">
+            <h3><i class="fas fa-fire"></i> Top Items</h3>
+          </div>
+          <div id="topItemsList" class="top-items-list"></div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="chart-card">
+          <div class="card-header">
+            <h3><i class="fas fa-list"></i> Active Orders</h3>
+            <button class="btn-sm" onclick="navigateTo('orders')">View All</button>
+          </div>
+          <div id="activeOrdersList" class="orders-mini-list"></div>
+        </div>
+        <div class="chart-card small">
+          <div class="card-header">
+            <h3><i class="fas fa-credit-card"></i> Payment Methods</h3>
+          </div>
+          <div style="height: 250px; width: 100%;">
+            <canvas id="paymentChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVE ORDERS FEED (Admin Real-Time Panel) -->
+      <div class="dashboard-grid admin-only">
+        <div class="chart-card live-feed-card">
+          <div class="card-header">
+            <h3><span class="live-dot" style="display:inline-block;margin-right:8px"></span>Live Active Orders</h3>
+            <button class="btn-sm" onclick="navigateTo('orders')">View All</button>
+          </div>
+          <div id="liveOrdersFeed" class="live-orders-feed">
+            <div class="live-empty"><i class="fas fa-spinner fa-spin"></i> <span>Loading...</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DAILY REPORT PANEL -->
+      <div class="dashboard-grid admin-only">
+        <div class="chart-card daily-report-card">
+          <div class="card-header">
+            <h3><i class="fas fa-file-chart-line" style="color:var(--success)"></i> Today's Daily Report</h3>
+            <div style="display:flex;gap:8px">
+              <button class="btn-sm" onclick="exportPayments()">
+                <i class="fas fa-download"></i> CSV
+              </button>
+              <button class="btn-primary" id="dailyReportBtn" onclick="saveDailyReport()" style="font-size:13px;padding:6px 16px">
+                <i class="fas fa-file-export"></i> Save Daily Report
+              </button>
+            </div>
+          </div>
+          <div class="daily-report-grid" id="dailyReportPreview">
+            <div class="report-stat">
+              <div class="report-stat-icon cash"><i class="fas fa-money-bill-wave"></i></div>
+              <div>
+                <div class="report-stat-label">Cash Today</div>
+                <div class="report-stat-value" id="rptCash">₹0.00</div>
+              </div>
+            </div>
+            <div class="report-stat">
+              <div class="report-stat-icon upi"><i class="fas fa-qrcode"></i></div>
+              <div>
+                <div class="report-stat-label">UPI Today</div>
+                <div class="report-stat-value" id="rptUpi">₹0.00</div>
+              </div>
+            </div>
+            <div class="report-stat">
+              <div class="report-stat-icon card"><i class="fas fa-credit-card"></i></div>
+              <div>
+                <div class="report-stat-label">Card Today</div>
+                <div class="report-stat-value" id="rptCard">₹0.00</div>
+              </div>
+            </div>
+            <div class="report-stat">
+              <div class="report-stat-icon total"><i class="fas fa-indian-rupee-sign"></i></div>
+              <div>
+                <div class="report-stat-label">Total Revenue</div>
+                <div class="report-stat-value green" id="rptTotal">₹0.00</div>
+              </div>
+            </div>
+          </div>
+          <p style="font-size:11px;color:var(--text-muted);margin-top:12px;text-align:center">
+            <i class="fas fa-info-circle"></i> Click "Save Daily Report" to push today's data to Google Sheets
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- BILLING PAGE -->
+    <div id="billingPage" class="content-page">
+      <div class="billing-layout">
+        <!-- Menu Section -->
+        <div class="billing-menu">
+          <div class="billing-filters">
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" id="menuSearch" placeholder="Search menu items..." oninput="filterMenu()" />
+            </div>
+            <div class="category-tabs" id="categoryTabs"></div>
+          </div>
+          <div class="menu-grid" id="menuGrid"></div>
+        </div>
+
+        <!-- Cart Section -->
+        <div class="billing-cart">
+          <div class="cart-header">
+            <h3><i class="fas fa-shopping-cart"></i> Current Bill</h3>
+            <button class="btn-danger-sm" onclick="clearCart()" id="clearCartBtn" style="display:none">
+              <i class="fas fa-trash"></i> Clear
+            </button>
+          </div>
+
+          <div class="cart-details">
+            <div class="form-group">
+              <label><i class="fas fa-chair"></i> Select Table *</label>
+              <div class="table-selector" id="tableSelector">
+                <button type="button" class="table-btn" onclick="selectTable(this, 'Take Away')">Take Away</button>
+                <button type="button" class="table-btn" onclick="selectTable(this, 'Table 1')">Table 1</button>
+              </div>
+              <input type="hidden" id="tableNumber" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label><i class="fas fa-user"></i> Customer Name</label>
+                <input type="text" id="customerName" placeholder="Walk-in Customer" />
+              </div>
+              <div class="form-group">
+                <label><i class="fas fa-phone"></i> Phone Number</label>
+                <input type="tel" id="customerPhone" placeholder="+91 9876543210" />
+              </div>
+            </div>
+          </div>
+
+          <div class="cart-items" id="cartItems">
+            <div class="cart-empty">
+              <i class="fas fa-shopping-cart"></i>
+              <p>Your cart is empty</p>
+              <span>Select items from the menu</span>
+            </div>
+          </div>
+
+          <div class="cart-totals" id="cartTotals" style="display:none">
+            <div class="total-row">
+              <span>Subtotal</span>
+              <span id="cartSubtotal">₹0.00</span>
+            </div>
+            <div class="total-row">
+              <span class="gst-label">GST</span>
+              <span id="cartGst">₹0.00</span>
+            </div>
+            <div class="total-row discount">
+              <span>Discount</span>
+              <div class="discount-input">
+                <input type="number" id="discountAmount" placeholder="0" min="0" oninput="updateCartTotals()" />
+                <span>₹</span>
+              </div>
+            </div>
+            <div class="total-row grand">
+              <span>TOTAL</span>
+              <span id="cartTotal">₹0.00</span>
+            </div>
+          </div>
+
+          <div class="cart-notes" id="cartNotesSection" style="display:none">
+            <textarea id="orderNotes" placeholder="Special instructions..." rows="2"></textarea>
+          </div>
+
+          <div class="cart-actions" id="cartActions" style="display:none">
+            <button class="btn-secondary" onclick="previewBill()">
+              <i class="fas fa-eye"></i> Preview
+            </button>
+            <button class="btn-primary" onclick="placeOrder()">
+              <i class="fas fa-paper-plane"></i> Place Order
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MENU MANAGEMENT PAGE -->
+    <div id="menuPage" class="content-page">
+      <div class="page-controls">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="menuMgmtSearch" placeholder="Search items..." oninput="filterMenuMgmt()" />
+        </div>
+        <div class="controls-right">
+          <button class="btn-secondary" onclick="seedMenu()" id="seedBtn">
+            <i class="fas fa-database"></i> Seed Sample Data
+          </button>
+          <button class="btn-primary admin-only" onclick="openAddItemModal()">
+            <i class="fas fa-plus"></i> Add Item
+          </button>
+        </div>
+      </div>
+      <div class="menu-table-wrapper">
+        <table class="data-table" id="menuTable">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Type</th>
+              <th>GST</th>
+              <th>Status</th>
+              <th class="admin-only">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="menuTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ORDERS PAGE -->
+    <div id="ordersPage" class="content-page">
+      <div class="page-controls">
+        <div class="orders-filters">
+          <select id="orderStatusFilter" onchange="loadOrders()">
+            <option value="">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+          <input type="date" id="orderDateFilter" onchange="loadOrders()" />
+        </div>
+      </div>
+      <div class="orders-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Order #</th>
+              <th>Table</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Payment</th>
+              <th>Status</th>
+              <th>Time</th>
+              <th>Staff</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- USERS PAGE -->
+    <div id="usersPage" class="content-page">
+      <div class="page-controls">
+        <h2 style="margin: 0;font-size:20px;">Staff Management</h2>
+        <button class="btn-primary admin-only" onclick="openModal('addUserModal')">
+          <i class="fas fa-user-plus"></i> Add New Staff
+        </button>
+      </div>
+      <div class="users-grid" id="usersGrid"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ======================== MODALS ======================== -->
+<!-- Add/Edit Menu Item Modal -->
+<div class="modal-overlay" id="menuItemModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="menuModalTitle"><i class="fas fa-utensils"></i> Add Menu Item</h3>
+      <button class="modal-close" onclick="closeModal('menuItemModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <form id="menuItemForm" onsubmit="saveMenuItem(event)">
+      <input type="hidden" id="editItemId" />
+      <div class="form-row">
+        <div class="form-group">
+          <label>Item Name *</label>
+          <input type="text" id="itemName" required placeholder="Butter Chicken" />
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="itemCategory" required>
+            <option value="">Select Category</option>
+            <option>Starter</option>
+            <option>Main Course</option>
+            <option>Beverages</option>
+            <option>Desserts</option>
+            <option>Breads</option>
+            <option>Rice & Biryani</option>
+            <option>Soups</option>
+            <option>Salads</option>
+            <option>Special</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Price (₹) *</label>
+          <input type="number" id="itemPrice" required min="1" placeholder="280" />
+        </div>
+        <div class="form-group">
+          <label>GST Rate (%)</label>
+          <input type="number" id="itemGst" value="5" min="0" max="28" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="itemDesc" placeholder="Item description..." rows="2"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group check-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="itemIsVeg" checked />
+            <span class="checkmark"></span>
+            Vegetarian
+          </label>
+        </div>
+        <div class="form-group check-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="itemAvailable" checked />
+            <span class="checkmark"></span>
+            Available
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('menuItemModal')">Cancel</button>
+        <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Item</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3><i class="fas fa-credit-card"></i> Payment</h3>
+      <button class="modal-close" onclick="closeModal('paymentModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="payment-content">
+      <div class="payment-summary" id="paymentSummary"></div>
+      <div class="payment-methods">
+        <h4>Select Payment Method</h4>
+        <div class="payment-options">
+          <button class="payment-opt" id="upiPayBtn" onclick="selectPayment('UPI', this)">
+            <i class="fas fa-qrcode"></i> UPI
+          </button>
+          <button class="payment-opt" onclick="selectPayment('Cash', this)">
+            <i class="fas fa-money-bill"></i> Cash
+          </button>
+          <button class="payment-opt" onclick="selectPayment('Card', this)">
+            <i class="fas fa-credit-card"></i> Card
+          </button>
+        </div>
+      </div>
+      <div id="upiSection" class="upi-section" style="display:none">
+        <div class="qr-container">
+          <img id="qrCodeImg" src="" alt="UPI QR Code" />
+          <div class="upi-info">
+            <p>Scan to Pay</p>
+            <p class="upi-amount" id="upiAmount"></p>
+            <p class="upi-id">UPI: <strong id="upiIdText"></strong></p>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>UPI Transaction ID (optional)</label>
+          <input type="text" id="upiTxnId" placeholder="Enter UPI ref number" />
+        </div>
+      </div>
+      <div id="cashSection" class="cash-section" style="display:none">
+        <div class="cash-ui">
+          <i class="fas fa-money-bill-wave"></i>
+          <p>Amount to collect: <strong id="cashAmount"></strong></p>
+          <div class="form-group">
+            <label>Cash Received</label>
+            <input type="number" id="cashReceived" placeholder="Enter amount" oninput="calcChange()" />
+          </div>
+          <div class="change-display" id="changeDisplay"></div>
+        </div>
+      </div>
+      <div id="cardSection" class="card-section" style="display:none">
+        <div class="card-ui">
+          <i class="fas fa-credit-card"></i>
+          <p>Swipe/Tap card for: <strong id="cardAmount"></strong></p>
+          <div class="form-group">
+            <label>Card Last 4 Digits</label>
+            <input type="text" id="cardLast4" placeholder="XXXX" maxlength="4" />
+          </div>
+        </div>
+      </div>
+      <div class="payment-actions" id="paymentActions" style="display:none">
+        <button class="btn-success full-width" onclick="confirmPayment()">
+          <i class="fas fa-check-circle"></i> Confirm Payment
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bill Preview Modal -->
+<div class="modal-overlay" id="billPreviewModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3><i class="fas fa-file-invoice"></i> Bill Preview</h3>
+      <button class="modal-close" onclick="closeModal('billPreviewModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="billPreviewContent" class="bill-preview"></div>
+  </div>
+</div>
+
+  <!-- Order Details Modal -->
+<div class="modal-overlay" id="orderDetailModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3><i class="fas fa-receipt"></i> Order Details</h3>
+      <button class="modal-close" onclick="closeModal('orderDetailModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="orderDetailContent"></div>
+    <div class="modal-footer" id="orderDetailFooter"></div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal-overlay" id="addUserModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-plus"></i> Add New Staff</h3>
+      <button class="modal-close" onclick="closeModal('addUserModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <form onsubmit="handleAdminAddUser(event)">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="adminRegName" required />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="adminRegEmail" required />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="adminRegPassword" required minlength="6" />
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="adminRegRole">
+          <option value="staff">Staff</option>
+          <option value="admin">Admin</option>
+          <option value="cook">Cook</option>
+          <option value="master">Master</option>
+          <option value="servent">Servent</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+        <button type="submit" class="btn-primary">Add Staff</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<!-- Edit User Modal -->
+<div class="modal-overlay" id="editUserModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-edit"></i> Edit Staff</h3>
+      <button class="modal-close" onclick="closeModal('editUserModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <form onsubmit="saveEditUser(event)" autocomplete="off">
+      <input type="hidden" id="editUserId" />
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="editUserName" required />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="editUserEmail" required />
+      </div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="editUserRole">
+          <option value="staff">Staff</option>
+          <option value="admin">Admin</option>
+          <option value="cook">Cook</option>
+          <option value="master">Master</option>
+          <option value="servent">Servent</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>New Password <span style="color:var(--text-muted);font-weight:400">(leave blank to keep current)</span></label>
+        <input type="password" id="editUserPassword" placeholder="Enter new password" minlength="6" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('editUserModal')">Cancel</button>
+        <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="js/api.js?v=8"></script>
+<script src="js/auth.js?v=8"></script>
+<script src="js/menu.js?v=8"></script>
+<script src="js/billing.js?v=8"></script>
+<script src="js/orders.js?v=8"></script>
+<script src="js/dashboard.js?v=8"></script>
+<script src="js/realtime.js?v=8"></script>
+<script src="js/app.js?v=8"></script>
+</body>
+</html>
+</body>
+</html>
