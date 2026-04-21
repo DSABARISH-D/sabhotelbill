@@ -1,5 +1,6 @@
 // ========== API LAYER ==========
-const API_BASE = 'http://localhost:5000/api';
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:';
+const API_BASE = (isLocal && window.location.port !== '5000') ? 'http://localhost:5000/api' : '/api';
 
 const api = {
   getHeaders() {

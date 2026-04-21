@@ -37,14 +37,18 @@ app.post('/save-bill', async (req, res) => {
 });
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
+const uri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/hotel_billing';
+mongoose.connect(uri)
   .then(() => {
     console.log('✅ MongoDB Connected');
-    app.listen(process.env.PORT, () => {
-      console.log(`🚀 Server running on port ${process.env.PORT}`);
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      app.listen(process.env.PORT || 5000, () => {
+        console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
+      });
+    }
   })
   .catch(err => {
     console.error('❌ MongoDB connection failed:', err.message);
-    process.exit(1);
   });
+
+module.exports = app;
